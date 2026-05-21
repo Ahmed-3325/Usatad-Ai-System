@@ -1,0 +1,11 @@
+# Ustad AI Frontend Refactor Tasks
+
+- [x] 1. Refactor AppNavigator and Splash Screen (Visual updates)
+- [x] 2. Update LoginScreen (Remove social, add validation alert)
+- [x] 3. Update SignupScreen (Add fields, write to Firestore)
+- [x] 4. Update RegistrationScreen (Remove Primary Skill)
+- [x] 5. Update DashboardScreen (Load providers.json, show dynamic user data)
+- [x] 6. Update SearchScreen (Deep querying of providers.json)
+- [x] 7. Update ProfileScreen (Fetch and show Firestore user data)
+- [x] 8. Update ChatScreen (Fix Web absolute positioning layout)
+- [x] 9. Update HistoryScreen (Build mock bookings layout)

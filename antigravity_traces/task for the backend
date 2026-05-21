@@ -1,0 +1,9 @@
+# Refactoring Ustad AI to Agentic Workflow
+
+- `[/]` Refactor `main.py`
+  - `[x]` Implement LangGraph AgentState and nodes
+  - `[x]` Implement `POST /orchestrate` endpoint
+  - `[x]` Retain existing lifecycle endpoints
+  - `[x]` Add CORS Middleware
+- `[x]` Test local execution of `/orchestrate` endpoint
+- `[x]` Document changes in walkthrough.md

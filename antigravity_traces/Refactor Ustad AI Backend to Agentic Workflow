@@ -1,0 +1,38 @@
+# Refactor Ustad AI Backend to Agentic Workflow
+
+This plan outlines the refactoring of `main.py` to replace the existing individual endpoints with a unified Agentic Workflow using LangGraph. This architecture aligns better with the goal of an autonomous AI Orchestrator for the hackathon.
+
+## Open Questions
+
+- Should I retain the existing `/update-status` and `/raise-dispute` endpoints in the new `main.py`, or should they also be integrated into a graph/removed for now? I plan to keep them as standalone endpoints since they represent lifecycle events rather than the initial booking orchestration, but let me know if you want them removed or integrated.
+- The `node_parse_intent` will continue to return a mocked deterministic response for now based on the `user_request` (as before). Are there any specific conditions you want mocked, or just the same "AC Technician, G-13, Economy" intent for all requests to ensure the hackathon demo works reliably?
+
+## Proposed Changes
+
+### Backend Workflow
+
+#### [MODIFY] [main.py](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/main.py)
+We will completely rewrite `main.py` to:
+1. **Setup FastAPI & CORS**: Add `CORSMiddleware` to allow cross-origin requests from the Expo React Native frontend.
+2. **Define AgentState**: Create a `TypedDict` containing:
+   - `user_request`: str
+   - `parsed_intent`: dict/Pydantic model
+   - `matched_provider`: dict
+   - `final_quote`: dict
+   - `status`: str
+3. **Create Nodes**:
+   - `node_parse_intent`: Parses the user request and returns the structured intent (mocked).
+   - `node_match_provider`: Loads `providers.json`, applies the 6-factor matching logic (Price, Trust, Skill, Rating, Distance) based on the parsed intent, and selects the best provider. Updates the state.
+   - `node_calculate_pricing`: Takes the matched provider and parsed intent, computes base labor, travel fee, and applies any economy discount. Generates the final quote.
+4. **Compile StateGraph**: Define the linear flow: `START` -> `node_parse_intent` -> `node_match_provider` -> `node_calculate_pricing` -> `END`.
+5. **Expose Orchestration Endpoint**: Create `POST /orchestrate` that accepts a `message`, invokes the compiled graph, and returns the final state (the orchestration trace).
+
+## Verification Plan
+
+### Automated Tests
+- Run the FastAPI server locally (`fastapi dev main.py` or `uvicorn`).
+- Use the `run_command` tool with `curl` or a python script to hit `POST /orchestrate` with a sample user message.
+- Verify that the response contains the parsed intent, the matched provider (with factor scores), and the final quote breakdown.
+
+### Manual Verification
+- Ask the user to test the `/orchestrate` endpoint from their React Native Expo app to ensure CORS is working and the response structure matches their frontend expectations.

@@ -1,0 +1,97 @@
+# Ustad AI Mobile Frontend Architecture & Data Orchestration Refactor
+
+This document outlines the systematic refactor to execute the requested product lifecycle, data validation, and visual specifications across the mobile application.
+
+## User Review Required
+> [!IMPORTANT]
+> - The `providers.json` file will be imported directly from the backend folder relative to the mobile `src` directory (`../../../../Ustad_Backend/providers.json`). This ensures offline capability and instantaneous rendering.
+> - `RegistrationScreen.js` will be largely bypassed since `SignupScreen.js` will directly handle writing Name and Location to Firestore. I will still retain it in the navigation stack as requested in Step 1, but typical flow will go Signup -> Firestore -> MainTabs.
+
+## Open Questions
+> [!WARNING]
+> - For the ChatScreen.js layout fix, NativeWind's `KeyboardAvoidingView` on Expo Web can sometimes still clip if the root `SafeAreaView` doesn't have `flex: 1`. Do you want me to force absolute positioning for the web build if `KeyboardAvoidingView` still fails? (My current plan is to use a flex-grow strategy).
+
+## Proposed Changes
+
+### Navigation & Splash Flow
+Refactoring the core navigation files and splash timing.
+
+#### [MODIFY] [AppNavigator.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/navigation/AppNavigator.js)
+- Update `SplashScreen` inline component to hold for exactly 1.5 seconds.
+- Force `navigation.replace('Onboarding')`.
+- Ensure strict stack sequence: Splash -> Onboarding -> Login -> Signup -> Registration -> MainTabs.
+
+#### [MODIFY] [OnboardingScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/auth/OnboardingScreen.js)
+- Ensure "Get Started" pushes directly to `Login`.
+
+---
+
+### Authentication & Validation Lifecycle
+Cleaning up the UI and enforcing strict Firebase logic gates.
+
+#### [MODIFY] [LoginScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/auth/LoginScreen.js)
+- Remove all social login buttons (Google, Apple, WhatsApp).
+- Update `handleLogin` to intercept Firebase auth errors (specifically `auth/user-not-found` or `auth/invalid-credential`).
+- Display explicit alert: `"User not registered first! Please Sign Up."`
+- Ensure successful login explicitly triggers `navigation.replace('MainTabs')`.
+
+#### [MODIFY] [SignupScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/auth/SignupScreen.js)
+- Remove social logins.
+- Add `Full Name` and `City/Location` input fields to the form alongside Email and Password.
+- Update `handleSignup` to use `createUserWithEmailAndPassword`.
+- Upon success, use `setDoc` to write `uid, fullName, city` directly into the Firestore `users` collection.
+- Route directly to `MainTabs` upon successful database write.
+
+#### [MODIFY] [RegistrationScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/auth/RegistrationScreen.js)
+- Completely delete the "Primary Skill" input field and its `useState`.
+- Retain only Full Name and City/Location inputs (in case this screen is accessed manually or as a fallback).
+
+---
+
+### Dynamic Data Population
+Wiring up Firestore and local JSON datasets to the dashboard and profile.
+
+#### [MODIFY] [DashboardScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/main/DashboardScreen.js)
+- Import `providers.json` from the Ustad_Backend directory.
+- Update `fetchUserData` to read `fullName` and `city` from the authenticated user's Firestore document.
+- Update the top-bar header greeting: `"Assalam-o-Alaikum 🧑‍💻 [Firestore fullName]"` and location text.
+- Map the "Verified Ustads" section dynamically using the `providers.json` array, mapping `Name`, `Profession`, `Complexity_Handling`, `Rating`, and `Distance_km` onto the rendering grid.
+
+#### [MODIFY] [ProfileScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/main/ProfileScreen.js)
+- Fetch active user data from Firestore on mount.
+- Cleanly map Name, Email, City, and Account Status into structured profile list items.
+
+---
+
+### Comprehensive Search & History
+Building out the search engine and booking history UI.
+
+#### [MODIFY] [SearchScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/main/SearchScreen.js)
+- Import `providers.json`.
+- Implement a `TextInput` for deep querying.
+- Create a filtering function that matches the search query against `Name`, `Profession`, or `Skill_Specialization`.
+- Render the filtered results dynamically into clickable profile cards immediately as the user types.
+
+#### [MODIFY] [HistoryScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/main/HistoryScreen.js)
+- Implement a mock active bookings array (since backend history isn't fully connected).
+- Map and display every requested service instance with distinct dynamic state styling badges (`Booking Confirmed` (Green), `En-Route` (Yellow), `Booking Cancelled` (Red)).
+
+---
+
+### Chat Engine Fixes
+Resolving the Web layout bounds.
+
+#### [MODIFY] [ChatScreen.js](file:///c:/Users/muham/OneDrive/Desktop/Ustad%20AI/mobile/src/screens/main/ChatScreen.js)
+- Refactor the root `SafeAreaView` and `KeyboardAvoidingView` to use absolute Flexbox bounding (`flex: 1`, `h-full`) to prevent the input area from clipping below the viewport on web builds.
+- Refine the inline custom chat bubbles for the LangGraph dynamic trace UI, ensuring confidence scores and calculated economy pricing map beautifully.
+
+## Verification Plan
+
+### Automated / Immediate Checks
+- Verify `AppNavigator.js` visually forces Splash -> Onboarding.
+- Trigger invalid Login to ensure the specific `"User not registered first! Please Sign Up."` alert is caught.
+
+### Manual Verification (User Action)
+- Please restart the Metro Bundler on web (`w` key or browser refresh).
+- Sign up a new user and verify that your Name and Location appear correctly on the Dashboard.
+- Type in the Search screen to confirm instantaneous filtering of `providers.json`.

@@ -1,0 +1,6 @@
+- [x] Install dependencies: `expo-blur`, `react-native-maps`, `lottie-react-native`
+- [x] Add `Quick-Chips` UI above the chat input in `ChatScreen.js`
+- [x] Implement Simulated Voice Notes UI (Microphone toggle) in `ChatScreen.js`
+- [x] Wrap Agentic Trace Log in `BlurView` for glassmorphism
+- [x] Integrate `react-native-maps` for the En-Route message (with Web fallback)
+- [x] Add Lottie checkmark animation to the Service Completed message

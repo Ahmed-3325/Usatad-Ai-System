@@ -1,0 +1,38 @@
+# Upgrade Ustad AI Backend to Full Service Lifecycle
+
+This plan outlines the expansion of the existing LangGraph workflow in `main.py` to meet the strict hackathon requirements. We will add new nodes, conditional routing, advanced algorithms, and new endpoints.
+
+## Open Questions
+
+- For the `low_confidence_fallback`, should the API return an immediate response asking the user for clarification, and then expect the user to hit `/orchestrate` again with the clarified message? (I plan to implement it this way so the frontend can display the follow-up question).
+- For `/simulate-booking` and `/service-quality-loop`, I will implement these as standalone FastAPI endpoints that simulate database updates or external actions (like WhatsApp) by returning structured JSON logs. Does this align with your expectations for the hackathon?
+
+## Proposed Changes
+
+### 1. Update LangGraph State (`AgentState`)
+We will add new fields to the `AgentState` `TypedDict`:
+- `confidence_score`: float
+- `scheduling_details`: dict
+- `clarification_message`: str (used if fallback is triggered)
+
+### 2. Update and Add Nodes
+- **`node_parse_intent`**: Simulate intent parsing but add a `confidence_score`. We will mock a high confidence score normally, but we can simulate a low score if the user message contains a specific keyword (e.g., "unknown" or "confused") for demo purposes.
+- **`node_match_provider`**: Refactor the algorithm to explicitly score and output the 6 factors separately: Price, Reliability (On-time), Cancellation Risk, Skill Complexity, Rating, and Distance.
+- **`node_schedule_booking` [NEW]**: Simulate checking the provider's calendar. Add logic to calculate travel-time buffers and prevent double-booking.
+- **`node_calculate_pricing`**: Introduce `demand_surge_multiplier` (e.g., 1.2x if urgency is high or time is peak) and `urgency_adjustment`.
+
+### 3. Conditional Graph Routing
+- Add a conditional edge after `node_parse_intent`:
+  - If `confidence_score >= 0.7` -> proceed to `node_match_provider`
+  - If `confidence_score < 0.7` -> proceed to `END` with state `status = "LOW_CONFIDENCE_FALLBACK"` and populate `clarification_message`.
+
+### 4. New FastAPI Endpoints
+- **`POST /simulate-booking`**: Takes a `booking_id` and simulates dispatching WhatsApp notifications and calendar syncs.
+- **`POST /service-quality-loop`**: Simulates provider updates (En-route, Arrived) and includes a placeholder for photo evidence.
+- **`POST /raise-dispute`**: We will update the existing dispute endpoint to explicitly simulate resolving No-Show/Price Disagreements with refunds or provider strikes.
+
+## Verification Plan
+1. **Local Server Check**: Ensure FastAPI starts with `fastapi dev main.py`.
+2. **Standard Flow**: Test `/orchestrate` with a clear message to verify the 6-factor match, scheduling, and dynamic pricing all execute successfully.
+3. **Fallback Flow**: Test `/orchestrate` with an ambiguous message to ensure it gracefully exits early with a low confidence score and prompts for clarification.
+4. **Lifecycle Endpoints**: Test the three simulation endpoints to verify they return the expected JSON payloads simulating the real-world events.

@@ -1,0 +1,30 @@
+# Ustad AI Backend Refactor & Diagnostics Walkthrough
+
+This document outlines the diagnostics and fixes implemented to resolve the orchestration failures and data matching issues within the `Ustad_Backend` FastApi service.
+
+## 1. Route Integrity Diagnostic
+The `404 Not Found` error previously observed has been thoroughly investigated.
+- **Route Validation**: The orchestrator endpoint in `main.py` is definitively established as `@app.post("/orchestrate")`.
+- **Method Verification**: The route only accepts `POST` requests and no sub-paths or prefixes were overriding it.
+- **Why was it failing?**: The `404` was actually being raised *intentionally* by the backend logic itself whenever `NO_PROVIDERS_FOUND` occurred. This was masquerading as a standard route-not-found error, masking the true problem: the provider matching logic was failing to find records.
+
+## 2. File System Path Audit & Load Integrity
+We found that the app could potentially fail to load `providers.json` depending on the working directory it was started from.
+- **Absolute Path Implementation**: Refactored the `load_providers()` function to use `os.path.abspath("providers.json")` to guarantee deterministic data loading.
+- **Error Status Injection**: Added a strict validation check. If `providers.json` is missing or parses as empty, the application now returns a descriptive `SYSTEM_DATA_LOAD_ERROR` status (HTTP 500), rather than gracefully failing into a generic 404 response.
+
+## 3. Search Trace & Matching Engine Overhaul
+The core reason for "No suitable providers found" (the root cause of the 404s) was traced to strict string matching and failure to correctly map `target_location` to `City`.
+
+### [MODIFY] `node_match_provider`
+- **Loose Keyword Normalization**: We migrated from `p.get("Profession") == intent["service_category"]` to a bi-directional `.lower()` loose string containment matching logic. "AC Repair" will now correctly detect "AC Technician" providers.
+- **City Resolution**: Updated the matching engine to properly filter the provider `City` field against the `target_location` extracted by Gemini. 
+- **Debug Trace Logging**: Introduced a dedicated `-- SEARCH TRACE --` block that outputs to the console during every orchestration call. This prints the total matching professions, and the final count after city and complexity constraints are applied.
+
+## 4. Gemini API Resilience & 503 Mitigation
+To mitigate the `503 Unavailable (High Demand)` errors from the Gemini API:
+- **Exponential Backoff Loop**: The `node_parse_intent` function has been hardened with a `max_retries = 3` loop. 
+- **Graceful Retries**: If a `503` or `Unavailable` exception is caught, the system pauses execution using `time.sleep(2)` before reattempting the prompt execution. 
+
+## Next Steps
+You can now start your FastAPI server (`uvicorn main:app --reload`). Monitor the console output; when you submit a query, you will see exactly how the orchestrator evaluates the `target_location` against `providers.json` thanks to the new trace logs.

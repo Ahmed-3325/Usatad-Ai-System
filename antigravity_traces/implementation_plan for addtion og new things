@@ -1,0 +1,37 @@
+# Goal Description
+
+The goal is to implement 4 premium features (Voice Notes UI, Live Map Tracking, AI Predictive Quick-Chips, and Premium Animations/Glassmorphism) into the existing `ChatScreen.js` to make the Ustad AI application look more attractive and intelligent. The core backend orchestration logic and overall visual theme will remain exactly the same.
+
+## User Review Required
+
+> [!WARNING]
+> We will need to install three new libraries to achieve these premium effects: `expo-blur` (for glassmorphism), `react-native-maps` (for the live tracking map), and `lottie-react-native` (for premium micro-animations). 
+> **Are you okay with installing these packages?** (If you are testing on Expo Web, `react-native-maps` requires a fallback image instead of an interactive map. I will handle this automatically.)
+
+## Proposed Changes
+
+### mobile/src/screens/main/ChatScreen.js
+
+#### [MODIFY] ChatScreen.js
+- **Predictive Quick-Chips:** Add a horizontal `ScrollView` containing dynamic suggestion chips (e.g., "Emergency Plumber", "AC Maintenance") directly above the chat input bar. Clicking a chip will automatically populate the text input.
+- **Voice Notes UI:** Modify the chat input bar. While the text is empty, the "Send" button will become a "Microphone" button. When pressed, it will show a visually pulsating "Listening..." state and simulate transcribing voice to text into the input field.
+- **Live Map Tracking:** Update the `isLifecycleSimulation` logic so that when the "En-Route" message appears, it embeds a mini `MapView` (using `react-native-maps`) showing a fake route path approaching the user's location.
+- **Glassmorphism & Lottie:** 
+  - Wrap the Agentic Trace Log in a `BlurView` (`expo-blur`) for an iOS-style frosted glass effect.
+  - Implement a `LottieView` checkmark animation inside the "Service Completed" message.
+
+### package.json
+
+#### [MODIFY] package.json
+- Run `npx expo install expo-blur react-native-maps lottie-react-native` to add the required UI dependencies.
+
+## Verification Plan
+
+### Automated Tests
+- Restart the Expo server `npx expo start` to bundle the new native modules.
+- Verify that `ChatScreen.js` compiles without layout breaks.
+
+### Manual Verification
+- Open the Chat Screen and verify the Predictive Chips scroll horizontally.
+- Hold the Microphone button and verify it populates text.
+- Execute a Booking and verify the `BlurView` looks premium and the Map renders correctly on the En-Route message without crashing Expo Go.
