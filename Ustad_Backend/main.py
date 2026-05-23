@@ -22,7 +22,7 @@ import time
 from groq import Groq
 
 # 👇 TERI GROQ API KEY 👇
-GROQ_API_KEY = "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"
+GROQ_API_KEY = ""
 client = Groq(api_key=GROQ_API_KEY)
 
 app = FastAPI(title="Ustad AI Orchestrator - Advanced Groq Edition")
